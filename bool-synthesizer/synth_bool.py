@@ -68,7 +68,7 @@ def main():
         pos_inputs = lines[4:4+num_pos]
         neg_inputs = lines[-num_neg:]
 
-    term_cnt_max = 20
+    term_cnt_max = 30
     s = Solver()
     for term_cnt in range(1, term_cnt_max + 1):
         P = [[Bool('p_%d%d' % (i, j)) for j in range(num_args)]
