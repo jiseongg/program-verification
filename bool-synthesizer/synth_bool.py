@@ -29,12 +29,12 @@ def main():
     term_cnt_max = 20
     s = Solver()
     for term_cnt in range(1, term_cnt_max + 1):
-        P = [Bool('p_%d%d' % (i, j)) for i in range(term_cnt)
-                for j in range(num_args)]
-        Q = [Bool('q_%d%d' % (i, j)) for i in range(term_cnt)
-                for j in range(num_args)]
-        Z = [Bool('z_%d%d' % (i, j)) for i in range(term_cnt)
-                for j in range(num_pos)]
+        P = [[Bool('p_%d%d' % (i, j)) for j in range(num_args)]
+                for i in range(term_cnt)]
+        Q = [[Bool('q_%d%d' % (i, j)) for j in range(num_args)]
+                for i in range(term_cnt)]
+        Z = [[Bool('z_%d%d' % (i, j)) for j in range(term_cnt)]
+                for i in range(num_pos)]
         F = encode_logics(P, Q, Z, pos_inputs, neg_inputs)
 
         s = Solver()
@@ -42,12 +42,12 @@ def main():
         r = s.check()
         if r == sat:
             m = s.model()
-            P_sols = [m.evaluate(P[i][j]) for i in range(term_cnt)
-                for j in range(num_args)]
-            Q_sols = [m.evaluate(Q[i][j]) for i in range(term_cnt)
-                for j in range(num_args)]
-            Z_sols = [m.evaluate(Z[i][j]) for i in range(term_cnt)
-                for j in range(num_pos)]
+            P_sols = [[m.evaluate(P[i][j]) for j in range(num_args)]
+                    for i in range(term_cnt)]
+            Q_sols = [[m.evaluate(Q[i][j]) for j in range(num_args)]
+                    for i in range(term_cnt)]
+            Z_sols = [[m.evaluate(Z[i][j]) for j in range(num_pos)]
+                    for j in range(term_cnt)]
             answer = decode_logics(P_sols, Q_sols, Z_sols)
             print('Learned function with size = %d' % term_cnt)
             print('f(X) = %s' % answer)
