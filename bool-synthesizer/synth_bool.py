@@ -56,11 +56,20 @@ def decode_logics(P_sols, Q_sols):
 
 def main():
 
-    if len(sys.argv) != 2:
-        print('Usage: %s <program spec>' % __file__)
-        sys.exit()
+    if len(sys.argv) < 2:
+        print('Usage: %s <program spec> [maximum term count]' % __file__)
+        sys.exit(1)
+    elif len(sys.argv) == 3:
+        try:
+            max_term_cnt = int(sys.argv[2])
+        except ValueError:
+            print('Error: the `maximum term count` should be an integer, in')
+            print('\t"%s <program spec> [maximum term count]"' % __file__)
+            sys.exit(1)
     else:
-        spec_file = sys.argv[1]
+        max_term_cnt = 30
+
+    spec_file = sys.argv[1]
     
     with open(spec_file, 'r') as f:
         lines = [s.strip() for s in f.readlines()]
@@ -68,9 +77,8 @@ def main():
         pos_inputs = lines[4:4+num_pos]
         neg_inputs = lines[-num_neg:]
 
-    term_cnt_max = 30
     s = Solver()
-    for term_cnt in range(1, term_cnt_max + 1):
+    for term_cnt in range(1, max_term_cnt + 1):
         P = [[Bool('p_%d%d' % (i, j)) for j in range(num_args)]
                 for i in range(term_cnt)]
         Q = [[Bool('q_%d%d' % (i, j)) for j in range(num_args)]
