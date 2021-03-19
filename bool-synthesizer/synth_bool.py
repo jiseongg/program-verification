@@ -7,31 +7,34 @@ from z3 import *
 def encode_logics(P, Q, Z, pos_inputs, neg_inputs):
     term_cnt = len(P)
 
-    # one of z_ik for kth positive input must be true
-    # if z_ik is true
-    # 1) ith term cannot contain !x_j, if x_j is True
-    # 1) ith term cannot contain x_j, if x_j is False
+    # for kth positive input
+    # 1) one of z_ik is true, for all i
+    # 2) ith term cannot contain !x_j, if x_j is True (z_ik -> ~q_ij) 
+    # 3) ith term cannot contain x_j, if x_j is False (z_ik -> p_ij)
     positive_constraints = []
     for k, pos_input in enumerate(pos_inputs):
+        # 1)
         positive_constraints.append(Or([Z[i][k] for i in range(term_cnt)]))
         for i in range(term_cnt):
             for j, x_j in enumerate(pos_input):
                 if x_j == '1':
+                    # 2)
                     positive_constraints.append(
                             Or(Not(Z[i][k]), Not(Q[i][j])))
                 else:
+                    # 3)
                     positive_constraints.append(
                             Or(Not(Z[i][k]), Not(P[i][j])))
 
     # for negative input, one of follows are True
-    # 1) ith term contain !x_j where x_j is True
-    # 2) ith term doesn't contain x_j where x_j is False
+    # 1) ith term contains !x_j where x_j is True
+    # 2) ith term contains x_j where x_j is False
     negative_constraints = []
     for k, neg_input in enumerate(neg_inputs):
         for i in range(term_cnt):
             negative_constraints.append(
-                    Or([Q[i][j] if x_j == '1'
-                        else P[i][j]
+                    Or([Q[i][j] if x_j == '1'  # 1)
+                        else P[i][j]           # 2)
                         for j, x_j in enumerate(neg_input)]))
 
     return positive_constraints + negative_constraints
@@ -57,7 +60,7 @@ def decode_logics(P_sols, Q_sols):
 def main():
 
     if len(sys.argv) < 2:
-        print('Usage: %s <program spec> [maximum term count]' % __file__)
+        print('Usage: %s <program spec>' % __file__)
         sys.exit(1)
     
     spec_file = sys.argv[1]
