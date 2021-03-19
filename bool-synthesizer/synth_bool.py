@@ -59,16 +59,7 @@ def main():
     if len(sys.argv) < 2:
         print('Usage: %s <program spec> [maximum term count]' % __file__)
         sys.exit(1)
-    elif len(sys.argv) == 3:
-        try:
-            max_term_cnt = int(sys.argv[2])
-        except ValueError:
-            print('Error: the `maximum term count` should be an integer, in')
-            print('\t"%s <program spec> [maximum term count]"' % __file__)
-            sys.exit(1)
-    else:
-        max_term_cnt = 30
-
+    
     spec_file = sys.argv[1]
     
     with open(spec_file, 'r') as f:
@@ -76,6 +67,8 @@ def main():
         num_args, num_pos, num_neg = list(map(int, lines[:3]))
         pos_inputs = lines[4:4+num_pos]
         neg_inputs = lines[-num_neg:]
+
+    max_term_cnt = 2 ** (num_args - 1)
 
     s = Solver()
     for term_cnt in range(1, max_term_cnt + 1):
