@@ -82,7 +82,7 @@ def main():
                 for i in range(term_cnt)]
         F = encode_logics(P, Q, Z, pos_inputs, neg_inputs)
 
-        s = Solver()
+        s.reset()
         s.add(F)
         r = s.check()
         if r == sat:
