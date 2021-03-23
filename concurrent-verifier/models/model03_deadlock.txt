@@ -1,0 +1,15 @@
+30
+5
+2
+--thread1--
+0 maybe 1
+1 set 0 1 2
+2 if 1 2 3
+3 critical 4
+4 set 0 0 0
+--thread2--
+0 maybe 1
+1 set 1 1 2
+2 if 0 2 3
+3 critical 4
+4 set 1 0 0
