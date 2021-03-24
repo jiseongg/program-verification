@@ -171,9 +171,18 @@ def encode_logics(A, B, l, th_sel_A, th_sel_B, th_A, th_B):
             unique_state_constraints + transition_constraints + \
             invariants_shared
 
-def decod_logics(A_sols, B_sols, l_sols, A_r_sols, B_r_sols, th_sel_sols):
-    '''TODO'''
-    raise NotImplementedError
+
+### get program sequences for a logic interpretation
+def decode_logics(A, B, l, th_sel_A):
+
+    pgm_sequences = []
+    for t in range(len(A)):
+        a = A[t].index(True)
+        b = B[t].index(True)
+        state = (a, b, *l[t])
+        pgm_sequences.append(state)
+    
+    return pgm_sequences
 
 
 def main():
@@ -287,18 +296,17 @@ def main():
             #pprint.pprint(th_sel_B_sols)
             #print()
 
-            print('Mutual exclusion could be violated in %d step: ' % r)
-
-            #answer = decode_logics(A_sols, B_sols, l_sols,
-            #        A_r_sols, B_r_sols, th_sel_A_sols)
-            #print(answer)
+            pgm_sequences = decode_logics(A_sols, B_sols, l_sols, th_sel_A_sols)
+            print('\nMutual exclusion could be violated in %d step: ' % r)
+            for state in pgm_sequences:
+                print(' ', state)
 
             sys.exit(0)
         else:
             print('Safe when r is %d' % r)
             continue
     
-    print('Mutual exclusion is proved within %d steps' % max_step)
+    print('\nMutual exclusion is proved within %d steps' % max_step)
             
 
 if __name__ == '__main__':
