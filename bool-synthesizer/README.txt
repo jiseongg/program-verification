@@ -15,7 +15,7 @@ n 		(the number of negative examples)
 
 2. How to use
 
-python3 synth_bool.py <specification_file>
+python3 bool-synthesizer.py <specification_file>
 
 3. result
 
