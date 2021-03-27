@@ -59,7 +59,7 @@ def decode_logics(P_sols, Q_sols):
 def main():
 
     if len(sys.argv) < 2:
-        print('Usage: %s <program spec>' % __file__)
+        print('Usage: python3 %s <program spec>' % __file__.split('/')[-1])
         sys.exit(1)
     
     spec_file = sys.argv[1]
