@@ -30,17 +30,11 @@ def encode_logics(A, B, l, th_sel_A, th_sel_B, th_A, th_B):
             for s in range(len(B[0]))] 
     init_constraints += [
             Not(v) for v in l[0]]
-    #print('========== init_constraints ==========')
-    #pprint.pprint(init_constraints)
-    #print()
 
     ### only one thread can be executed in one step
     unique_thread_constraints = [
             p == Not(q)
             for p, q in zip(th_sel_A, th_sel_B)]
-    #print('========== unique_thread_constraints ==========')
-    #pprint.pprint(unique_thread_constraints)
-    #print()
 
     ### only one state is activated
     # e.g. A0_0 -> ~A3_0 (<=> ~A0_0 \/ ~A3_0) 
@@ -53,12 +47,15 @@ def encode_logics(A, B, l, th_sel_A, th_sel_B, th_A, th_B):
                             Or(Not(A[t][i]), Not(A[t][j])))
                     unique_state_constraints.append(
                             Or(Not(B[t][i]), Not(B[t][j])))
-    #print('========== unique_state_constraints ==========')
-    #pprint.pprint(unique_state_constraints)
-    #print()
 
-    ### build constraints for each statement
+    ### local function definitions for encoding semantics
     def encode_semantics(s_idx, stmt, th_sel, th):
+        '''build constraints for each statement
+        s_idx: the state index
+        stmt: statment written in string
+        th_sel: whether being executed or not
+        th: map from step to active state
+        '''
         stmt_split = stmt.split(' ')
         cmd = stmt_split[0]
         constraints = []
@@ -126,9 +123,6 @@ def encode_logics(A, B, l, th_sel_A, th_sel_B, th_A, th_B):
     for s_idx, (stmt_A, stmt_B) in enumerate(zip(th_A, th_B)):
         transition_constraints += encode_semantics(s_idx, stmt_A, th_sel_A, A)
         transition_constraints += encode_semantics(s_idx, stmt_B, th_sel_B, B)
-    #print('========== transition_constraints ==========')
-    #pprint.pprint(transition_constraints)
-    #print()
 
     ### invariants for shared variables
     invariants_shared = []
@@ -138,6 +132,7 @@ def encode_logics(A, B, l, th_sel_A, th_sel_B, th_A, th_B):
     set_stmt_B = [s_idx
             for s_idx, stmt in enumerate(th_B)
             if "set" in stmt]
+    # 1) only 'set' instruction can modifies shared variables
     for t in range(r):
         in_set_stmt_A = Or([A[t][idx] for idx in set_stmt_A])
         in_set_stmt_B = Or([B[t][idx] for idx in set_stmt_B])
@@ -155,6 +150,7 @@ def encode_logics(A, B, l, th_sel_A, th_sel_B, th_A, th_B):
                     Or(Not(th_sel_B[t]), Not(l[t][sh_idx]),
                         in_set_stmt_B, l[t+1][sh_idx])]
 
+    # 2) if one shared variable is changed, others are not changed
     for t in range(r):
         for sh_idx in range(num_shared):
             invariants_shared.append(
@@ -162,10 +158,6 @@ def encode_logics(A, B, l, th_sel_A, th_sel_B, th_A, th_B):
                     And([l[t][sh_other] == l[t+1][sh_other]
                         for sh_other in range(num_shared)
                         if sh_other != sh_idx])))
-
-    #print('========== invariants_shared ==========')
-    #pprint.pprint(invariants_shared)
-    #print()
 
     return init_constraints + unique_thread_constraints + \
             unique_state_constraints + transition_constraints + \
@@ -192,7 +184,7 @@ def main():
     global num_shared
 
     if len(sys.argv) < 2:
-        print('Usage: %s <program spec>' % __file__)
+        print('Usage: python3 %s <program spec>' % __file__.split('/')[-1])
         sys.exit(1)
     
     model_file = sys.argv[1]
@@ -204,6 +196,7 @@ def main():
         thread_B = list(map(lambda x: x[2:], lines[-num_states:]))
 
     # Find all critical sections
+    # to encode condition for violating mutual exclusion
     critical_list_A = []
     critical_list_B = []
     for i, (s_A, s_B) in enumerate(zip(thread_A, thread_B)):
@@ -224,22 +217,25 @@ def main():
         for t in range(r + 1):
             '''
             A_states: {
-                0:      [A0_0, A1_0, ..., An_0],
-                1:      [A0_1, A1_1, ..., An_1],
+                0:  [A0_0, A1_0, ..., An_0],
+                1:  [A0_1, A1_1, ..., An_1],
                 ...
-                r: [A0_r, A1_r, ..., An_r],
+                r:  [A0_r, A1_r, ..., An_r],
             }
-            As_t: thread A is in the s-th state in the step `t`
+            A2_3: thread A is in the 2th state in the step 3
 
             l_shared: {
-                0:      [l0_0, l1_0, ..., li_0],
-                1:      [l0_1, l1_1, ..., li_1],
+                0:  [l0_0, l1_0, ..., li_0],
+                1:  [l0_1, l1_1, ..., li_1],
                 ...
-                r: [l0_r, l1_r, ..., li_r],
+                r:  [l0_r, l1_r, ..., li_r],
             }
-            li_t: the i-th shared variable is 1 in the step `t`
+            l2_3: the 2th shared variable is `1` in the step 3
 
-            th_sel_A, th_sel_B: which thread will be executed?
+            th_sel_A: [
+                sel_A_0, sel_A_1, ..., sel_A_r
+            ]
+            sel_A_1: thread A will be executed in 1th step
             '''
             A_states[t] = [Bool('A%d_%d' % (s, t))
                 for s in range(num_states)]
@@ -253,14 +249,11 @@ def main():
         F = encode_logics(A_states, B_states, l_shared,
                 th_sel_A, th_sel_B, thread_A, thread_B)
 
-        # error_condition
+        # error_condition - violation of mutual exclusion
         error_condition = Or([
                 And(A_states[r][a_idx], B_states[r][b_idx])
                 for a_idx in critical_list_A
                 for b_idx in critical_list_B])
-        #print('========== error_condition ==========')
-        #pprint.pprint(error_condition)
-        #print()
 
         s.reset()
         s.add(F + [error_condition])
@@ -276,27 +269,8 @@ def main():
             th_sel_A_sols = list(map(lambda x: m.evaluate(x), th_sel_A))
             th_sel_B_sols = list(map(lambda x: m.evaluate(x), th_sel_B))
 
-            #print('========== A_sols ==========')
-            #pprint.pprint(A_sols)
-            #print()
-
-            #print('========== B_sols ==========')
-            #pprint.pprint(B_sols)
-            #print()
-
-            #print('========== l_sols ==========')
-            #pprint.pprint(l_sols)
-            #print()
-
-            #print('========== th_sel_A_sols ==========')
-            #pprint.pprint(th_sel_A_sols)
-            #print()
-
-            #print('========== th_sel_B_sols ==========')
-            #pprint.pprint(th_sel_B_sols)
-            #print()
-
             pgm_sequences = decode_logics(A_sols, B_sols, l_sols, th_sel_A_sols)
+
             print('\nMutual exclusion could be violated in %d step: ' % r)
             for state in pgm_sequences:
                 print(' ', state)

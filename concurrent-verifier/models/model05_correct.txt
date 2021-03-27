@@ -1,7 +1,7 @@
 30
 7
 3
---thread1--
+--threadA--
 0 maybe 1
 1 set 0 1 2
 2 set 2 0 3
@@ -9,7 +9,7 @@
 4 if 2 5 3
 5 critical 6
 6 set 0 0 0
---thread2--
+--threadB--
 0 maybe 1
 1 set 1 1 2
 2 set 2 1 3
